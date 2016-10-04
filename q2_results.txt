@@ -1,0 +1,11 @@
+"benjamin saw the apple" with probability 0.00121124031008
+Total nodes considered: 996
+
+"a son thanked god" with probability 0.000132052424813
+Total nodes considered: 358
+
+"benjamin saw the youngest son" with probability 0.000127053179379
+Total nodes considered: 82
+
+"a son thanked god for the apple" with probability 7.08856997623e-08
+Total nodes considered: 19246

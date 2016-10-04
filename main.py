@@ -19,15 +19,16 @@ NextInfo = collections.namedtuple('NextInfo', 'word percent')
 def processInput(text):
     nexts = {}
     for line in text.split('\n'):
-        parts = line.split('/')
-        w1 = InputWord(parts[0], parts[1])
-        w2 = InputWord(parts[3], parts[4])
-        percent = float(parts[6])
+        if line != "":
+            parts = line.split('/')
+            w1 = InputWord(parts[0], parts[1])
+            w2 = InputWord(parts[3], parts[4])
+            percent = float(parts[6])
 
-        nexts.setdefault(w1.word, {})
-        nexts[w1.word].setdefault(w1.type, {})
-        nexts[w1.word][w1.type].setdefault(w2.type, [])
-        nexts[w1.word][w1.type][w2.type].append(NextInfo(w2.word, percent))
+            nexts.setdefault(w1.word, {})
+            nexts[w1.word].setdefault(w1.type, {})
+            nexts[w1.word][w1.type].setdefault(w2.type, [])
+            nexts[w1.word][w1.type][w2.type].append(NextInfo(w2.word, percent))
     return nexts
 
 Sentence = collections.namedtuple('Sentence', 'string percent')
@@ -73,10 +74,15 @@ def generate(startingWord, sentenceSpec, graph):
     return("\"" + bestSentence.string + "\" with probability " + str(bestSentence.percent) + \
             "\nTotal nodes considered: " + str(totalNodes))
 
-
 def main():
     text = open("input.txt").read()
-    print generate("hans", ["NNP", "VBD", "DT", "NN"], text)
+    print generate("benjamin", ["NNP", "VBD", "DT", "NN"], text)
+    print
+    print generate("a", ["DT", "NN", "VBD", "NNP"], text)
+    print
+    print generate("benjamin", ["NNP", "VBD", "DT", "JJS", "NN"], text)
+    print
+    print generate("a", ["DT", "NN", "VBD", "NNP", "IN", "DT", "NN"], text)
 
 if __name__ == "__main__":
     main()
