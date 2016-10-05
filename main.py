@@ -32,8 +32,8 @@ def processInput(text):
             nexts[w1.word][w1.type][w2.type].append(NextInfo(w2.word, percent))
     return nexts
 
-Sentence = collections.namedtuple('Sentence', 'string percent')
-Node = collections.namedtuple('Node', 'word depth sentence weighting')
+Sentence = collections.namedtuple('Sentence', 'string percent length')
+Node = collections.namedtuple('Node', 'weighting word depth sentence')
 
 def generate(startingWord, sentenceSpec, strategy, graph):
     strategy = strategy.lower()
@@ -47,10 +47,10 @@ def generate(startingWord, sentenceSpec, strategy, graph):
 
     # we need to keep track of the depth of each node to look up which word type is next
     # we also need to keep track of the sentence generated so far and its percentage to print the answer
-    nodes = [Node(startingWord, 1, Sentence(startingWord, 1.0), 1.0)]
+    nodes = [Node(0.0, startingWord, 1, Sentence(startingWord, 1.0, 1))]
 
     def heuristic_value(base, node):
-        return base ** node.depth
+        return base ** (len(sentenceSpec) - (node.depth + 1))
 
     # Function to generate next nodes given a node
     def generateNextNodes(node):
@@ -58,14 +58,15 @@ def generate(startingWord, sentenceSpec, strategy, graph):
         try:
             for next in nexts[node.word][sentenceSpec[node.depth-1]][sentenceSpec[node.depth]]:
                 nodes.append(Node(
+                    -node.sentence.percent*next.percent * heuristic_value(1.0, node),
                     next.word,
                     node.depth+1,
                     # add the node's word to the sentence, multiplying the percents
                     Sentence(
                         node.sentence.string + ' ' + next.word,
-                        node.sentence.percent*next.percent
-                    ),
-                    node.sentence.percent*next.percent * heuristic_value(0.1, node)))
+                        node.sentence.percent*next.percent,
+                        node.sentence.length + 1
+                    )))
         except KeyError:
             # no need to do anything, nodes will be empty array
             pass
@@ -79,18 +80,28 @@ def generate(startingWord, sentenceSpec, strategy, graph):
         elif strategy == 'depth_first':
             node = nodes.pop(len(nodes)-1)
         elif strategy == 'heuristic':
-            node = nodes.pop(0)
+            node = heappop(nodes)
         totalNodes += 1
+        #print("Node!")
+        #print node.weighting
+        #print node.word
+        #print node.sentence
+        #print ""
+        if bestSentence is not None and node.sentence.percent < bestSentence.percent:
+            break
         if node.depth < len(sentenceSpec):
             nextNodes = generateNextNodes(node)
             if strategy == 'heuristic':
                 for nextNode in nextNodes:
+                    #print("  " + str(nextNode.word))
+                    #print("  " + str(nextNode.weighting))
+                    #print("  " + str(nextNode.sentence.percent))
+                    #print ""
                     heappush(nodes, nextNode)
             else:
                 nodes.extend(nextNodes)
         elif bestSentence is None or node.sentence.percent > bestSentence.percent:
             bestSentence = node.sentence
-            break
     return('"' + bestSentence.string + '" with probability ' + str(bestSentence.percent) + \
             '\nTotal nodes considered: ' + str(totalNodes))
 
