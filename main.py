@@ -1,4 +1,5 @@
 import collections
+from heapq import *
 
 InputWord = collections.namedtuple('InputWord', 'word type')
 NextInfo = collections.namedtuple('NextInfo', 'word percent')
@@ -32,11 +33,11 @@ def processInput(text):
     return nexts
 
 Sentence = collections.namedtuple('Sentence', 'string percent')
-Node = collections.namedtuple('Node', 'word depth sentence')
+Node = collections.namedtuple('Node', 'word depth sentence weighting')
 
 def generate(startingWord, sentenceSpec, strategy, graph):
     strategy = strategy.lower()
-    if not strategy in ['breadth_first', 'depth_first']:
+    if not strategy in ['breadth_first', 'depth_first', 'heuristic']:
         return('invalid strategy')
 
     nexts = processInput(graph)
@@ -46,7 +47,10 @@ def generate(startingWord, sentenceSpec, strategy, graph):
 
     # we need to keep track of the depth of each node to look up which word type is next
     # we also need to keep track of the sentence generated so far and its percentage to print the answer
-    nodes = [Node(startingWord, 1, Sentence(startingWord, 1.0))]
+    nodes = [Node(startingWord, 1, Sentence(startingWord, 1.0), 1.0)]
+
+    def heuristic_value(base, node):
+        return base ** node.depth
 
     # Function to generate next nodes given a node
     def generateNextNodes(node):
@@ -60,8 +64,8 @@ def generate(startingWord, sentenceSpec, strategy, graph):
                     Sentence(
                         node.sentence.string + ' ' + next.word,
                         node.sentence.percent*next.percent
-                        )
-                    ))
+                    ),
+                    node.sentence.percent*next.percent * heuristic_value(0.1, node)))
         except KeyError:
             # no need to do anything, nodes will be empty array
             pass
@@ -74,17 +78,25 @@ def generate(startingWord, sentenceSpec, strategy, graph):
             node = nodes.pop(0)
         elif strategy == 'depth_first':
             node = nodes.pop(len(nodes)-1)
+        elif strategy == 'heuristic':
+            node = nodes.pop(0)
         totalNodes += 1
         if node.depth < len(sentenceSpec):
-            nodes.extend(generateNextNodes(node))
+            nextNodes = generateNextNodes(node)
+            if strategy == 'heuristic':
+                for nextNode in nextNodes:
+                    heappush(nodes, nextNode)
+            else:
+                nodes.extend(nextNodes)
         elif bestSentence is None or node.sentence.percent > bestSentence.percent:
             bestSentence = node.sentence
+            break
     return('"' + bestSentence.string + '" with probability ' + str(bestSentence.percent) + \
             '\nTotal nodes considered: ' + str(totalNodes))
 
 def main():
     text = open('input.txt').read()
-    strategy = 'depth_first'
+    strategy = 'heuristic'
     print generate('benjamin', ['NNP', 'VBD', 'DT', 'NN'], strategy, text)
     print
     print generate('a', ['DT', 'NN', 'VBD', 'NNP'], strategy, text)
