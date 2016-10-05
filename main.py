@@ -87,7 +87,7 @@ def generate(startingWord, sentenceSpec, strategy, graph):
         #print node.word
         #print node.sentence
         #print ""
-        if bestSentence is not None and node.sentence.percent < bestSentence.percent:
+        if bestSentence is not None and node.sentence.percent < bestSentence.percent and strategy == 'heuristic':
             break
         if node.depth < len(sentenceSpec):
             nextNodes = generateNextNodes(node)
@@ -107,7 +107,7 @@ def generate(startingWord, sentenceSpec, strategy, graph):
 
 def main():
     text = open('input.txt').read()
-    strategy = 'heuristic'
+    strategy = 'breadth_first'
     print generate('benjamin', ['NNP', 'VBD', 'DT', 'NN'], strategy, text)
     print
     print generate('a', ['DT', 'NN', 'VBD', 'NNP'], strategy, text)
