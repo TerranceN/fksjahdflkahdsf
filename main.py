@@ -34,7 +34,11 @@ def processInput(text):
 Sentence = collections.namedtuple('Sentence', 'string percent')
 Node = collections.namedtuple('Node', 'word depth sentence')
 
-def generate(startingWord, sentenceSpec, graph):
+def generate(startingWord, sentenceSpec, strategy, graph):
+    strategy = strategy.lower()
+    if not strategy in ['breadth_first', 'depth_first']:
+        return('invalid strategy')
+
     nexts = processInput(graph)
 
     bestSentence = None
@@ -54,7 +58,7 @@ def generate(startingWord, sentenceSpec, graph):
                     node.depth+1,
                     # add the node's word to the sentence, multiplying the percents
                     Sentence(
-                        node.sentence.string + " " + next.word,
+                        node.sentence.string + ' ' + next.word,
                         node.sentence.percent*next.percent
                         )
                     ))
@@ -64,25 +68,30 @@ def generate(startingWord, sentenceSpec, graph):
         return nodes
 
     while nodes != []:
-        # take from the front for a breadth-first search
-        node = nodes.pop(0)
+        node = None
+        if strategy == 'breadth_first':
+            # take from the front for a breadth-first search
+            node = nodes.pop(0)
+        elif strategy == 'depth_first':
+            node = nodes.pop(len(nodes)-1)
         totalNodes += 1
         if node.depth < len(sentenceSpec):
             nodes.extend(generateNextNodes(node))
         elif bestSentence is None or node.sentence.percent > bestSentence.percent:
             bestSentence = node.sentence
-    return("\"" + bestSentence.string + "\" with probability " + str(bestSentence.percent) + \
-            "\nTotal nodes considered: " + str(totalNodes))
+    return('"' + bestSentence.string + '" with probability ' + str(bestSentence.percent) + \
+            '\nTotal nodes considered: ' + str(totalNodes))
 
 def main():
-    text = open("input.txt").read()
-    print generate("benjamin", ["NNP", "VBD", "DT", "NN"], text)
+    text = open('input.txt').read()
+    strategy = 'depth_first'
+    print generate('benjamin', ['NNP', 'VBD', 'DT', 'NN'], strategy, text)
     print
-    print generate("a", ["DT", "NN", "VBD", "NNP"], text)
+    print generate('a', ['DT', 'NN', 'VBD', 'NNP'], strategy, text)
     print
-    print generate("benjamin", ["NNP", "VBD", "DT", "JJS", "NN"], text)
+    print generate('benjamin', ['NNP', 'VBD', 'DT', 'JJS', 'NN'], strategy, text)
     print
-    print generate("a", ["DT", "NN", "VBD", "NNP", "IN", "DT", "NN"], text)
+    print generate('a', ['DT', 'NN', 'VBD', 'NNP', 'IN', 'DT', 'NN'], strategy, text)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
