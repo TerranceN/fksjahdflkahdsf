@@ -1,5 +1,20 @@
+import sys
 import collections
 from heapq import *
+
+# Our heuristic works by guessing at the values of the remaining transitions.
+#
+# This value is our guess, which is raised to the power of the number of
+#   remaining transitions.
+#
+# We originally tried using the next transition percentage chance, and later
+#   the average transition percentage. Neither of which gave us optimal results.
+#   This makes sense because that assumption could make the heuristic
+#   in-admissible. This led us to this value of 1.0 because it's the maximum
+#   percentage of any transition, which would make the heuristic admissible,
+#   and give us the optimal solution
+
+HEURISTIC_BEST_GUESS = 1.0
 
 InputWord = collections.namedtuple('InputWord', 'word type')
 NextInfo = collections.namedtuple('NextInfo', 'word percent')
@@ -58,7 +73,7 @@ def generate(startingWord, sentenceSpec, strategy, graph):
         try:
             for next in nexts[node.word][sentenceSpec[node.depth-1]][sentenceSpec[node.depth]]:
                 nodes.append(Node(
-                    -node.sentence.percent*next.percent * heuristic_value(1.0, node),
+                    -node.sentence.percent*next.percent * heuristic_value(HEURISTIC_BEST_GUESS, node),
                     next.word,
                     node.depth+1,
                     # add the node's word to the sentence, multiplying the percents
@@ -82,21 +97,17 @@ def generate(startingWord, sentenceSpec, strategy, graph):
         elif strategy == 'heuristic':
             node = heappop(nodes)
         totalNodes += 1
-        #print("Node!")
-        #print node.weighting
-        #print node.word
-        #print node.sentence
-        #print ""
+        # if we already have a better solution, ignore this node
         if bestSentence is not None and node.sentence.percent < bestSentence.percent:
-            break
+            if strategy == 'heuristic':
+                # with the heuristic stop whenever we get a solution
+                break
+            else:
+                continue
         if node.depth < len(sentenceSpec):
             nextNodes = generateNextNodes(node)
             if strategy == 'heuristic':
                 for nextNode in nextNodes:
-                    #print("  " + str(nextNode.word))
-                    #print("  " + str(nextNode.weighting))
-                    #print("  " + str(nextNode.sentence.percent))
-                    #print ""
                     heappush(nodes, nextNode)
             else:
                 nodes.extend(nextNodes)
@@ -107,7 +118,7 @@ def generate(startingWord, sentenceSpec, strategy, graph):
 
 def main():
     text = open('input.txt').read()
-    strategy = 'heuristic'
+    strategy = (sys.argv[1:] or ['heuristic'])[0]
     print generate('benjamin', ['NNP', 'VBD', 'DT', 'NN'], strategy, text)
     print
     print generate('a', ['DT', 'NN', 'VBD', 'NNP'], strategy, text)
